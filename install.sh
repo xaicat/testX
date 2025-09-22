@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2154
-#|---/ /+--------------------------+---/ /|#
-#|--/ /-| Main installation script |--/ /-|#
-#|-/ /--| Prasanth Rangan          |-/ /--|#
-#|/ /---+--------------------------+/ /---|#
 
 cat <<"EOF"
 
@@ -12,7 +7,7 @@ cat <<"EOF"
        / \         _       _  _      ___  ___
       /^  \      _| |_    | || |_  _|   \| __|
      /  _  \    |_   _|   | __ | || | |) | _|
-    /  | | ~\     |_|     |_||_|\_, |___/|___|
+    /  | | ~\     |_|     |_||_|_, |___/|___|
    /.-'   '-.\                  |__/
 
 -------------------------------------------------
@@ -23,7 +18,6 @@ EOF
 # import variables and functions #
 #--------------------------------#
 scrDir="$(dirname "$(realpath "$0")")"
-# shellcheck disable=SC1091
 if ! source "${scrDir}/global_fn.sh"; then
     echo "Error: unable to source global_fn.sh..."
     exit 1
@@ -37,10 +31,9 @@ flg_Restore=0
 flg_Service=0
 flg_DryRun=0
 flg_Shell=0
-flg_Nvidia=1
 flg_ThemeInstall=1
 
-while getopts idrstmnh RunStep; do
+while getopts idrstmh RunStep; do
     case $RunStep in
     i) flg_Install=1 ;;
     d)
@@ -49,13 +42,7 @@ while getopts idrstmnh RunStep; do
         ;;
     r) flg_Restore=1 ;;
     s) flg_Service=1 ;;
-    n)
-        # shellcheck disable=SC2034
-        export flg_Nvidia=0
-        print_log -r "[nvidia] " -b "Ignored :: " "skipping Nvidia actions"
-        ;;
     h)
-        # shellcheck disable=SC2034
         export flg_Shell=1
         print_log -r "[shell] " -b "Reevaluate :: " "shell options"
         ;;
@@ -68,17 +55,12 @@ Usage: $0 [options]
             d : install hyprland [d]efaults without configs --noconfirm
             r : [r]estore config files
             s : enable system [s]ervices
-            n : ignore/[n]o [n]vidia actions (-irsn to ignore nvidia)
             h : re-evaluate S[h]ell
             m : no the[m]e reinstallations
             t : [t]est run without executing (-irst to dry run all)
 
 NOTE:
         running without args is equivalent to -irs
-        to ignore nvidia, run -irsn
-
-WRONG:
-        install.sh -n # This will not work
 
 EOF
         exit 1
@@ -86,9 +68,8 @@ EOF
     esac
 done
 
-# Only export that are used outside this script
 HYDE_LOG="$(date +'%y%m%d_%Hh%Mm%Ss')"
-export flg_DryRun flg_Nvidia flg_Shell flg_Install flg_ThemeInstall HYDE_LOG
+export flg_DryRun flg_Shell flg_Install flg_ThemeInstall HYDE_LOG
 
 if [ "${flg_DryRun}" -eq 1 ]; then
     print_log -n "[test-run] " -b "enabled :: " "Testing without executing"
@@ -141,20 +122,7 @@ EOF
         cat "${custom_pkg}" >>"${scrDir}/install_pkg.lst"
     fi
 
-    #--------------------------------#
-    # add nvidia drivers to the list #
-    #--------------------------------#
-    if nvidia_detect; then
-        if [ ${flg_Nvidia} -eq 1 ]; then
-            cat /usr/lib/modules/*/pkgbase | while read -r kernel; do
-                echo "${kernel}-headers" >>"${scrDir}/install_pkg.lst"
-            done
-            nvidia_detect --drivers >>"${scrDir}/install_pkg.lst"
-        else
-            print_log -warn "Nvidia" "Nvidia GPU detected but ignored..."
-        fi
-    fi
-    nvidia_detect --verbose
+    # --- REMOVED: ALL NVIDIA DETECTION AND PACKAGE ADDING SECTIONS --- #
 
     #----------------#
     # get user prefs #
@@ -162,7 +130,7 @@ EOF
     echo ""
     if ! chk_list "aurhlpr" "${aurList[@]}"; then
         print_log -c "\nAUR Helpers :: "
-        aurList+=("yay-bin" "paru-bin") # Add this here instead of in global_fn.sh
+        aurList+=("yay-bin" "paru-bin")
         for i in "${!aurList[@]}"; do
             print_log -sec "$((i + 1))" " ${aurList[$i]} "
         done
@@ -280,13 +248,10 @@ EOF
     "${scrDir}/install_pst.sh"
 fi
 
-
 #---------------------------#
 # run migrations            #
 #---------------------------#
 if [ ${flg_Restore} -eq 1 ]; then
-
-# migrationDir="$(realpath "$(dirname "$(realpath "$0")")/../migrations")"
 migrationDir="${scrDir}/migrations"
 
 if [ ! -d "${migrationDir}" ]; then
@@ -317,7 +282,7 @@ if [ ${flg_Service} -eq 1 ]; then
                  _
  ___ ___ ___ _ _|_|___ ___ ___
 |_ -| -_|  _| | | |  _| -_|_ -|
-|___|___|_|  \_/|_|___|___|___|
+|___|___|_|  _/|_|___|___|___|
 
 EOF
 
@@ -349,3 +314,4 @@ if [ $flg_Install -eq 1 ] ||
         echo "The system will not reboot"
     fi
 fi
+
